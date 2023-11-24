@@ -43,7 +43,7 @@ def process_text(input_text: str) -> str:
     """
     return convert_numbers_to_words(remove_empty_lines(input_text))
 
-"""
+'''
 def combine_wav_files(
     folder_path: str = f"{os.getcwd()}/outputs/prompt_tts_open_source_joint/test_audio/audio/g_00140000",
     output_file: str = f"{os.getcwd()}/combined_output1.wav",
@@ -75,7 +75,7 @@ def combine_wav_files(
     if delete_originals:
         for wav_file in wav_files:
             os.remove(wav_file)
-"""
+'''
 
 def add_speaker_and_emotion(speaker: str = "9017", emotion: str = "Happy") -> str:
     """
