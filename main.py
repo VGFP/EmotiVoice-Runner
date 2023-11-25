@@ -1,14 +1,13 @@
+import sys
+import os
+sys.path.insert(0, os.getcwd())
+
 from utils.utils import generate_phoneme_from_text, add_speaker_and_emotion, process_text, download_model_checkpoints, run_tts, load_models
 
 """
 Proper workflow:
 download model checkpoints -> load_models -> process_text -> generate_phoneme_from_text -> add_speaker_and_emotion -> run_tts
 """
-
-
-
-if __name__ == '__main__':
-    main()
 
 def main():
 
@@ -23,7 +22,7 @@ def main():
     load_models()
 
     # process text
-    processed_text = process_text(text = text)
+    processed_text = process_text(input_text = text)
 
     # generate phoneme from text
     phoneme = generate_phoneme_from_text(processed_text)
@@ -35,3 +34,8 @@ def main():
     run_tts(processed_phoneme)
 
     print("Done!")
+
+
+if __name__ == '__main__':
+    main()
+

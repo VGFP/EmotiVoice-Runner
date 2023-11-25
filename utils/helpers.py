@@ -6,9 +6,11 @@ import numpy as np
 from g2p_en import G2p
 
 import os
+import sys
+sys.path.insert(0, os.getcwd())
 
-from ..models.prompt_tts_modified.jets import JETSGenerator
-from ..models.prompt_tts_modified.simbert import StyleEncoder
+from models.prompt_tts_modified.jets import JETSGenerator
+from models.prompt_tts_modified.simbert import StyleEncoder
 from transformers import AutoTokenizer
 import os, sys, warnings, torch, glob, argparse
 import numpy as np
@@ -16,12 +18,11 @@ from models.hifigan.get_vocoder import MAX_WAV_VALUE
 import soundfile as sf
 from yacs import config as CONFIG
 from tqdm import tqdm
-from ..config.joint.config import Config
-
+from config.joint.config import Config
+from transformers import PreTrainedTokenizer
 import requests
-
 import torch
-
+import torch.nn as nn
 from typing import Tuple, Dict, List
 
 
@@ -38,7 +39,7 @@ def read_lexicon(lex_path):
 
 
 def preprocess_english(text):
-    lexicon = read_lexicon("./lexicon/librispeech-lexicon.txt")
+    lexicon = read_lexicon(f"{os.getcwd()}/utils/lexicon/librispeech-lexicon.txt")
 
     g2p = G2p()
     phones = []
@@ -229,48 +230,97 @@ def initialize_inference(logdir: str, checkpoint: str) -> Tuple[torch.device, nn
     config = Config()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    style_encoder = StyleEncoder(config).to(device)
-    style_encoder_ckpt = torch.load(os.path.join(os.getcwd(), "outputs", "style_encoder", "ckpt", "checkpoint_163431"), map_location=device)
-    style_encoder.load_state_dict(style_encoder_ckpt["model"])
+    with open(config.model_config_path, 'r') as fin:
+        conf = CONFIG.load_cfg(fin)
+    
+    conf.n_vocab = config.n_symbols
+    conf.n_speaker = config.speaker_n_labels
 
-    generator = JETSGenerator(config).to(device)
-    ckpt_path = os.path.join(os.path.join(os.getcwd(), "output"), logdir, "ckpt", checkpoint)
+    style_encoder = StyleEncoder(config).to(device)
+    model_CKPT = torch.load(os.path.join(os.getcwd(), "outputs", "style_encoder", "ckpt", "checkpoint_163431"), map_location="cpu")
+    model_ckpt = {}
+    for key, value in model_CKPT["model"].items():
+        new_key = key[7:]
+        model_ckpt[new_key] = value
+    style_encoder.load_state_dict(model_ckpt)
+
+    generator = JETSGenerator(conf).to(device)
+    ckpt_path = os.path.join(os.path.join(os.getcwd(), "outputs"), logdir, "ckpt", checkpoint)
     model_CKPT = torch.load(ckpt_path, map_location=device)
     generator.load_state_dict(model_CKPT["generator"])
     generator.eval()
 
     tokenizer = AutoTokenizer.from_pretrained(config.bert_path)
-    token2id, speaker2id = load_lookups(config)
+    with open(config.token_list_path, "r") as f:
+        token2id = {t.strip(): idx for idx, t, in enumerate(f.readlines())}
+
+    with open(config.speaker2id_path, encoding="utf-8") as f:
+        speaker2id = {t.strip(): idx for idx, t in enumerate(f.readlines())}
 
     return device, style_encoder, generator, tokenizer, token2id, speaker2id
 
 
 def generate_audio(text: str, device: torch.device, style_encoder: nn.Module, generator: nn.Module, tokenizer: PreTrainedTokenizer, token2id: Dict[str, int], speaker2id: Dict[str, int]) -> np.ndarray:
     audio_arr = []
-    for line in text.split("\n"):
-        speaker, prompt, text_content, content = process_line(line, speaker2id, token2id)
-        if speaker is None:
-            continue
 
-        style_embedding, content_embedding = generate_embeddings(prompt, content, tokenizer, style_encoder, device)
-        audio = infer_audio(style_embedding, content_embedding, text_content, speaker, generator, device)
-        audio_arr.append(audio)
+    texts = []
+    prompts = []
+    speakers = []
+    contents = []
+
+    for line in text.split("\n"):
+        line = line.strip().split("|")
+        speakers.append(line[0])
+        prompts.append(line[1])
+        texts.append(line[2].split())
+        contents.append(line[3])
+
+    for i, (speaker, prompt, text, content) in enumerate(tqdm(zip(speakers, prompts, texts, contents))):
+
+        style_embedding = get_style_embedding(prompt, tokenizer, style_encoder)
+        content_embedding = get_style_embedding(content, tokenizer, style_encoder)
+        
+        if speaker not in speaker2id:
+            continue
+        speaker = speaker2id[speaker]
+        text_int = [token2id[ph] for ph in text]
+        
+        sequence = torch.from_numpy(np.array(text_int)).to(device).long().unsqueeze(0)
+        sequence_len = torch.from_numpy(np.array([len(text_int)])).to(device)
+        style_embedding = torch.from_numpy(style_embedding).to(device).unsqueeze(0)
+        content_embedding = torch.from_numpy(content_embedding).to(device).unsqueeze(0)
+        speaker = torch.from_numpy(np.array([speaker])).to(device)
+        with torch.no_grad():
+
+            infer_output = generator(
+                    inputs_ling=sequence,
+                    inputs_style_embedding=style_embedding,
+                    input_lengths=sequence_len,
+                    inputs_content_embedding=content_embedding,
+                    inputs_speaker=speaker,
+                    alpha=1.0
+                )
+            audio = infer_output["wav_predictions"].squeeze()* MAX_WAV_VALUE
+            audio = audio.cpu().numpy().astype('int16')
+            audio_arr.append(audio)
 
     return np.concatenate(audio_arr)
 
 
-def save_audio(output_path: str, audio_data: np.ndarray, sample_rate: int) -> None:
+def save_audio(output_path: str, output_filename: str, audio_data: np.ndarray, sample_rate: int) -> None:
     if not os.path.exists(output_path):
         os.makedirs(output_path, exist_ok=True)
-    sf.write(output_path, data=audio_data, samplerate=sample_rate)
+    sf.write(os.path.join(output_path, output_filename), data=audio_data, samplerate=sample_rate)
 
 
 def get_style_embedding(prompt, tokenizer, style_encoder):
 
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
     prompt = tokenizer([prompt], return_tensors="pt")
-    input_ids = prompt["input_ids"]
-    token_type_ids = prompt["token_type_ids"]
-    attention_mask = prompt["attention_mask"]
+    input_ids = prompt["input_ids"].to(device)
+    token_type_ids = prompt["token_type_ids"].to(device)
+    attention_mask = prompt["attention_mask"].to(device)
 
     with torch.no_grad():
         output = style_encoder(

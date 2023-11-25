@@ -1,5 +1,5 @@
-from helpers import preprocess_english, remove_empty_lines, convert_numbers_to_words, generate_audio, initialize_inference, save_audio
-
+from .helpers import preprocess_english, remove_empty_lines, convert_numbers_to_words, generate_audio, initialize_inference, save_audio, download_large_file_from_hugging_face
+from typing import List
 from pydub import AudioSegment
 import glob
 import os
@@ -12,7 +12,7 @@ tokenizer = None
 token2id = None
 speaker2id = None
 
-def generate_phoneme_from_text(text: str) -> list(str):
+def generate_phoneme_from_text(text: str) -> List[str]:
     """
     Main function to generate phonemes from text.
     Args:
@@ -77,10 +77,11 @@ def combine_wav_files(
             os.remove(wav_file)
 '''
 
-def add_speaker_and_emotion(speaker: str = "9017", emotion: str = "Happy") -> str:
+def add_speaker_and_emotion(text: List[str], speaker: str = "9017", emotion: str = "Happy") -> str:
     """
     Add speaker and emotion to the prompt.
     Args:
+        text (str): input text
         speaker (str): speaker ID
         emotion (str): emotion
 
@@ -90,7 +91,7 @@ def add_speaker_and_emotion(speaker: str = "9017", emotion: str = "Happy") -> st
 
     proccessed_text = []
 
-    for line in emotions.splitlines():
+    for line in text:
         proccessed_text.append(
             speaker + "|" + emotion + "|" + line + "|Emoti-Voice - a Multi-Voice and Prompt-Controlled T-T-S Engine"
         )
@@ -98,21 +99,23 @@ def add_speaker_and_emotion(speaker: str = "9017", emotion: str = "Happy") -> st
     return "\n".join(proccessed_text)
 
 
-def download_model_checkpoints(models_path: str = f"{os.getcwd()}/outputs/prompt_tts_open_source_joint/ckpt", models: list = ["do_00140000", "g_00140000", "checkpoint_163431"], hugging_face_url: str = "https://huggingface.co/FPVG/EmotiVoice-pretrained-models/blob/main/") -> None:
+def download_model_checkpoints(models_path: str = f"{os.getcwd()}/outputs/prompt_tts_open_source_joint/ckpt", models: list = ["do_00140000", "g_00140000", "checkpoint_163431"], hugging_face_url: str = "https://huggingface.co/FPVG/EmotiVoice-pretrained-models/resolve/main/") -> None:
     """
     Download the model checkpoints.
     Args:
         model_path (str): path to save the checkpoints
     """
-    
     for model in models:
-        model_path = os.path.join(models_path, model)
-        if not os.path.exists(model_path):
-            os.makedirs(model_path)
+        if model == "checkpoint_163431":
+            save_path = f"{os.getcwd()}/outputs/style_encoder/ckpt"
+        else:
+            save_path = f"{models_path}"
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
 
-        model_url = hugging_face_url + model
+        model_url = hugging_face_url + model + "?download=true"
 
-        download_large_file_from_hugging_face(model, hugging_face_url, model_path)
+        download_large_file_from_hugging_face(model, model_url, save_path)
 
 
 def load_models( logdir: str = f"prompt_tts_open_source_joint", checkpoint: str = f"g_00140000") -> None:
@@ -121,11 +124,11 @@ def load_models( logdir: str = f"prompt_tts_open_source_joint", checkpoint: str 
     device, style_encoder, generator, tokenizer, token2id, speaker2id = initialize_inference(logdir, checkpoint)
 
 
-def run_tts(processed_text: str,  output_path: str = f"{os.getcwd()}/outputs/prompt_tts_open_source_joint/test_audio/audio/my_audio.wav") -> None:
+def run_tts(processed_text: str, output_path: str = f"{os.getcwd()}/outputs/prompt_tts_open_source_joint/test_audio/audio", output_filename: str = "my_audio.wav") -> None:
     global device, style_encoder, generator, tokenizer, token2id, speaker2id
 
     if not device:
         load_models()
 
     audio = generate_audio(processed_text, device, style_encoder, generator, tokenizer, token2id, speaker2id)
-    save_audio(audio, output_path)
+    save_audio(output_path, output_filename,  audio, sample_rate=16_000)
