@@ -39,7 +39,7 @@ async def generate_audio(request: TTSRequest):
         processed_phoneme = add_speaker_and_emotion(phoneme, request.speaker, request.emotion)
 
         # Generate the audio file
-        output_path = (f"{os.getcwd()}/outputs/prompt_tts_open_source_joint/test_audio/audio",)
+        output_path = f"{os.getcwd()}/outputs/prompt_tts_open_source_joint/test_audio/audio"
         output_filename = generate_unique_filename()
         run_tts(processed_phoneme, output_path, output_filename)
 
