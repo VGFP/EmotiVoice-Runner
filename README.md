@@ -7,3 +7,11 @@ Code for easier setting up interface for EmotiVoice Text to Speach model
 pip install -r requirements.txt
 pip install torch torchaudio
 ```
+
+To run FastAPI server: 
+
+```bash
+uvicorn main:app --reload
+```
+
+Loading make take a while becaues script will download models from Hugging face if they are not already downloaded.
