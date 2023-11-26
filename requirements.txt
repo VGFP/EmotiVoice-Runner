@@ -52,3 +52,9 @@ yellowbrick==1.5
 yfinance==0.2.31
 zict==3.0.0
 zipp==3.17.0
+g2p-en==2.1.0
+pydub==0.25.1
+words2num==0.2.3
+num2words==0.5.13
+fastapi==0.104.1
+uvicorn==0.24.0.post1

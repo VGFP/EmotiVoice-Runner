@@ -2,10 +2,10 @@
 This code is modified from https://github.com/espnet/espnet.
 """
 
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
 
 
 def initialize(model: torch.nn.Module, init: str):
@@ -28,23 +28,15 @@ def initialize(model: torch.nn.Module, init: str):
 
     # reset some modules with default init
     for m in model.modules():
-        if isinstance(
-            m, (torch.nn.Embedding, torch.nn.LayerNorm, torch.nn.GroupNorm)
-        ):
+        if isinstance(m, (torch.nn.Embedding, torch.nn.LayerNorm, torch.nn.GroupNorm)):
             m.reset_parameters()
         if hasattr(m, "espnet_initialization_fn"):
             m.espnet_initialization_fn()
 
     # TODO(xkc): Hacking s3prl_frontend and wav2vec2encoder initialization
-    if getattr(model, "encoder", None) and getattr(
-        model.encoder, "reload_pretrained_parameters", None
-    ):
+    if getattr(model, "encoder", None) and getattr(model.encoder, "reload_pretrained_parameters", None):
         model.encoder.reload_pretrained_parameters()
-    if getattr(model, "frontend", None) and getattr(
-        model.frontend, "reload_pretrained_parameters", None
-    ):
+    if getattr(model, "frontend", None) and getattr(model.frontend, "reload_pretrained_parameters", None):
         model.frontend.reload_pretrained_parameters()
-    if getattr(model, "postencoder", None) and getattr(
-        model.postencoder, "reload_pretrained_parameters", None
-    ):
+    if getattr(model, "postencoder", None) and getattr(model.postencoder, "reload_pretrained_parameters", None):
         model.postencoder.reload_pretrained_parameters()

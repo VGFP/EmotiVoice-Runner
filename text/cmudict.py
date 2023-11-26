@@ -4,7 +4,6 @@ from https://github.com/keithito/tacotron
 
 import re
 
-
 valid_symbols = [
     "AA",
     "AA0",

@@ -5,9 +5,10 @@ This code is modified from https://github.com/Ailln/cn2an.
 from typing import Union
 from warnings import warn
 
-#from proces import preprocess
+from .conf import (NUMBER_LOW_AN2CN, NUMBER_UP_AN2CN, UNIT_LOW_ORDER_AN2CN,
+                   UNIT_UP_ORDER_AN2CN)
 
-from .conf import NUMBER_LOW_AN2CN, NUMBER_UP_AN2CN, UNIT_LOW_ORDER_AN2CN, UNIT_UP_ORDER_AN2CN
+# from proces import preprocess
 
 
 class An2Cn(object):
@@ -36,10 +37,10 @@ class An2Cn(object):
             # 数据预处理：
             # 1. 繁体转简体
             # 2. 全角转半角
-            #inputs = preprocess(inputs, pipelines=[
+            # inputs = preprocess(inputs, pipelines=[
             #    "traditional_to_simplified",
             #    "full_angle_to_half_angle"
-            #])
+            # ])
 
             # 检查数据是否有效
             self.__check_inputs_is_valid(inputs)
@@ -171,8 +172,7 @@ class An2Cn(object):
                 if i > 0 and not output_an[-1] == "零":
                     output_an += numeral_list[int(d)]
 
-        output_an = output_an.replace("零零", "零").replace("零万", "万").replace("零亿", "亿").replace("亿万", "亿") \
-            .strip("零")
+        output_an = output_an.replace("零零", "零").replace("零万", "万").replace("零亿", "亿").replace("亿万", "亿").strip("零")
 
         # 解决「一十几」问题
         if output_an[:2] in ["一十"]:

@@ -11,7 +11,6 @@ from scipy.stats import betabinom
 
 
 class AlignmentModule(nn.Module):
-
     def __init__(self, adim, odim, cache_prior=True):
         super().__init__()
         self.cache_prior = cache_prior
@@ -25,7 +24,6 @@ class AlignmentModule(nn.Module):
         self.f_conv3 = nn.Conv1d(adim, adim, kernel_size=1, padding=0)
 
     def forward(self, text, feats, text_lengths, feats_lengths, x_masks=None):
-
         text = text.transpose(1, 2)
         text = F.relu(self.t_conv1(text))
         text = self.t_conv2(text)
@@ -57,7 +55,6 @@ class AlignmentModule(nn.Module):
         return log_p_attn
 
     def _generate_prior(self, text_lengths, feats_lengths, w=1) -> torch.Tensor:
-
         B = len(text_lengths)
         T_text = text_lengths.max()
         T_feats = feats_lengths.max()
@@ -87,11 +84,8 @@ class AlignmentModule(nn.Module):
         return bb_prior
 
 
-
-
 @jit(nopython=True)
 def _monotonic_alignment_search(log_p_attn):
-
     T_mel = log_p_attn.shape[0]
     T_inp = log_p_attn.shape[1]
     Q = np.full((T_inp, T_mel), fill_value=-np.inf)
@@ -123,7 +117,6 @@ def _monotonic_alignment_search(log_p_attn):
 
 
 def viterbi_decode(log_p_attn, text_lengths, feats_lengths):
-
     B = log_p_attn.size(0)
     T_text = log_p_attn.size(2)
     device = log_p_attn.device
@@ -163,7 +156,6 @@ def _average_by_duration(ds, xs, text_lengths, feats_lengths):
 
 
 def average_by_duration(ds, xs, text_lengths, feats_lengths):
-
     device = ds.device
     args = [ds, xs, text_lengths, feats_lengths]
     args = [arg.detach().cpu().numpy() for arg in args]
@@ -173,13 +165,11 @@ def average_by_duration(ds, xs, text_lengths, feats_lengths):
 
 
 class GaussianUpsampling(torch.nn.Module):
-
     def __init__(self, delta=0.1):
         super().__init__()
         self.delta = delta
+
     def forward(self, hs, ds, h_masks=None, d_masks=None, alpha=1.0):
-
-
         ds = ds * alpha
 
         B = ds.size(0)
@@ -189,23 +179,23 @@ class GaussianUpsampling(torch.nn.Module):
             #   It will be happened in inference with a bad duration predictor.
             #   So we do not need to care the padded sequence case here.
             ds[ds.sum(dim=1).eq(0)] = 1
-            
+
         if h_masks is None:
-            mel_lenghs = torch.sum(ds, dim=-1).int() # lengths = [5, 3, 2]
-            T_feats = mel_lenghs.max().item() # T_feats = 5
+            mel_lenghs = torch.sum(ds, dim=-1).int()  # lengths = [5, 3, 2]
+            T_feats = mel_lenghs.max().item()  # T_feats = 5
         else:
             T_feats = h_masks.size(-1)
-        t = torch.arange(0, T_feats).unsqueeze(0).repeat(B,1).to(device).float()
+        t = torch.arange(0, T_feats).unsqueeze(0).repeat(B, 1).to(device).float()
         if h_masks is not None:
             t = t * h_masks.float()
 
-        c = ds.cumsum(dim=-1) - ds/2
+        c = ds.cumsum(dim=-1) - ds / 2
 
         energy = -1 * self.delta * (t.unsqueeze(-1) - c.unsqueeze(1)) ** 2
 
         if d_masks is not None:
-            energy = energy.masked_fill(~(d_masks.unsqueeze(1).repeat(1,T_feats,1)), -float("inf"))
+            energy = energy.masked_fill(~(d_masks.unsqueeze(1).repeat(1, T_feats, 1)), -float("inf"))
 
-        p_attn = torch.softmax(energy, dim=2) # (B, T_feats, T_text)
+        p_attn = torch.softmax(energy, dim=2)  # (B, T_feats, T_text)
         hs = torch.matmul(p_attn, hs)
         return hs

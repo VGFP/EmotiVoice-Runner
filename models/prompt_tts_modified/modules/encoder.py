@@ -2,21 +2,19 @@
 This code is modified from https://github.com/espnet/espnet.
 """
 
-import torch
 import math
-from torch import nn
+
+import torch
 import torch.nn.functional as F
+from torch import nn
+
 
 class MultiSequential(torch.nn.Sequential):
-    
-
     def __init__(self, *args, layer_drop_rate=0.0):
-
         super(MultiSequential, self).__init__(*args)
         self.layer_drop_rate = layer_drop_rate
 
     def forward(self, *args):
-        
         _probs = torch.empty(len(self)).uniform_()
         for idx, m in enumerate(self):
             if not self.training or (_probs[idx] >= self.layer_drop_rate):
@@ -25,8 +23,8 @@ class MultiSequential(torch.nn.Sequential):
 
 
 def repeat(N, fn, layer_drop_rate=0.0):
-
     return MultiSequential(*[fn(n) for n in range(N)], layer_drop_rate=layer_drop_rate)
+
 
 class MultiLayeredConv1d(torch.nn.Module):
     def __init__(self, in_chans, hidden_chans, kernel_size, dropout_rate):
@@ -53,10 +51,7 @@ class MultiLayeredConv1d(torch.nn.Module):
 
 
 class MultiHeadedAttention(nn.Module):
-
-
     def __init__(self, n_head, n_feat, dropout_rate):
-        
         super(MultiHeadedAttention, self).__init__()
         assert n_feat % n_head == 0
         # We assume d_v always equals d_k
@@ -70,7 +65,6 @@ class MultiHeadedAttention(nn.Module):
         self.dropout = nn.Dropout(p=dropout_rate)
 
     def forward_qkv(self, query, key, value):
-
         n_batch = query.size(0)
         q = self.linear_q(query).view(n_batch, -1, self.h, self.d_k)
         k = self.linear_k(key).view(n_batch, -1, self.h, self.d_k)
@@ -82,49 +76,37 @@ class MultiHeadedAttention(nn.Module):
         return q, k, v
 
     def forward_attention(self, value, scores, mask):
-
         n_batch = value.size(0)
         if mask is not None:
             mask = mask.unsqueeze(1).eq(0)  # (batch, 1, *, time2)
             min_value = torch.finfo(scores.dtype).min
             scores = scores.masked_fill(mask, min_value)
-            self.attn = torch.softmax(scores, dim=-1).masked_fill(
-                mask, 0.0
-            )  # (batch, head, time1, time2)
+            self.attn = torch.softmax(scores, dim=-1).masked_fill(mask, 0.0)  # (batch, head, time1, time2)
         else:
             self.attn = torch.softmax(scores, dim=-1)  # (batch, head, time1, time2)
 
         p_attn = self.dropout(self.attn)
         x = torch.matmul(p_attn, value)  # (batch, head, time1, d_k)
-        x = (
-            x.transpose(1, 2).contiguous().view(n_batch, -1, self.h * self.d_k)
-        )  # (batch, time1, d_model)
+        x = x.transpose(1, 2).contiguous().view(n_batch, -1, self.h * self.d_k)  # (batch, time1, d_model)
 
         return self.linear_out(x)  # (batch, time1, d_model)
 
     def forward(self, query, key, value, mask):
-
         q, k, v = self.forward_qkv(query, key, value)
         scores = torch.matmul(q, k.transpose(-2, -1)) / math.sqrt(self.d_k)
         return self.forward_attention(v, scores, mask)
 
 
 class LayerNorm(torch.nn.LayerNorm):
-
     def __init__(self, nout, dim=-1):
-        
         super(LayerNorm, self).__init__(nout, eps=1e-12)
         self.dim = dim
 
     def forward(self, x):
-
         if self.dim == -1:
             return super(LayerNorm, self).forward(x)
-        return (
-            super(LayerNorm, self)
-            .forward(x.transpose(self.dim, -1))
-            .transpose(self.dim, -1)
-        )
+        return super(LayerNorm, self).forward(x.transpose(self.dim, -1)).transpose(self.dim, -1)
+
 
 class EncoderLayer(nn.Module):
     def __init__(
@@ -137,7 +119,6 @@ class EncoderLayer(nn.Module):
         concat_after=False,
         stochastic_depth_rate=0.0,
     ):
-        
         super(EncoderLayer, self).__init__()
         self.self_attn = self_attn
         self.feed_forward = feed_forward
@@ -181,9 +162,7 @@ class EncoderLayer(nn.Module):
             x_concat = torch.cat((x, self.self_attn(x_q, x, x, mask)), dim=-1)
             x = residual + stoch_layer_coeff * self.concat_linear(x_concat)
         else:
-            x = residual + stoch_layer_coeff * self.dropout(
-                self.self_attn(x_q, x, x, mask)
-            )
+            x = residual + stoch_layer_coeff * self.dropout(self.self_attn(x_q, x, x, mask))
         if not self.normalize_before:
             x = self.norm1(x)
 
@@ -200,11 +179,8 @@ class EncoderLayer(nn.Module):
         return x, mask
 
 
-
 class PositionalEncoding(torch.nn.Module):
-
     def __init__(self, d_model, dropout_rate, max_len=5000, reverse=False):
-        
         super(PositionalEncoding, self).__init__()
         self.d_model = d_model
         self.reverse = reverse
@@ -214,7 +190,6 @@ class PositionalEncoding(torch.nn.Module):
         self.extend_pe(torch.tensor(0.0).expand(1, max_len))
 
     def extend_pe(self, x):
-        
         if self.pe is not None:
             if self.pe.size(1) >= x.size(1):
                 if self.pe.dtype != x.dtype or self.pe.device != x.device:
@@ -222,14 +197,11 @@ class PositionalEncoding(torch.nn.Module):
                 return
         pe = torch.zeros(x.size(1), self.d_model)
         if self.reverse:
-            position = torch.arange(
-                x.size(1) - 1, -1, -1.0, dtype=torch.float32
-            ).unsqueeze(1)
+            position = torch.arange(x.size(1) - 1, -1, -1.0, dtype=torch.float32).unsqueeze(1)
         else:
             position = torch.arange(0, x.size(1), dtype=torch.float32).unsqueeze(1)
         div_term = torch.exp(
-            torch.arange(0, self.d_model, 2, dtype=torch.float32)
-            * -(math.log(10000.0) / self.d_model)
+            torch.arange(0, self.d_model, 2, dtype=torch.float32) * -(math.log(10000.0) / self.d_model)
         )
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
@@ -237,28 +209,24 @@ class PositionalEncoding(torch.nn.Module):
         self.pe = pe.to(device=x.device, dtype=x.dtype)
 
     def forward(self, x: torch.Tensor):
-
         self.extend_pe(x)
         x = x * self.xscale + self.pe[:, : x.size(1)]
         return self.dropout(x)
 
 
 class ScaledPositionalEncoding(PositionalEncoding):
-
     def __init__(self, d_model, dropout_rate, max_len=5000):
-        
         super().__init__(d_model=d_model, dropout_rate=dropout_rate, max_len=max_len)
         self.alpha = torch.nn.Parameter(torch.tensor(1.0))
 
     def reset_parameters(self):
-        
         self.alpha.data = torch.tensor(1.0)
 
     def forward(self, x):
-
         self.extend_pe(x)
         x = x + self.alpha * self.pe[:, : x.size(1)]
         return self.dropout(x)
+
 
 class Encoder(torch.nn.Module):
     def __init__(
@@ -276,18 +244,15 @@ class Encoder(torch.nn.Module):
         positionwise_conv_kernel_size=1,
         stochastic_depth_rate=0.0,
     ):
-        
         super(Encoder, self).__init__()
-        self.embed = torch.nn.Sequential(
-                pos_enc_class(attention_dim, positional_dropout_rate)
-            )
+        self.embed = torch.nn.Sequential(pos_enc_class(attention_dim, positional_dropout_rate))
         self.normalize_before = normalize_before
         positionwise_layer = MultiLayeredConv1d
         positionwise_layer_args = (
             attention_dim,
             linear_units,
             positionwise_conv_kernel_size,
-            dropout_rate,            
+            dropout_rate,
         )
         encoder_selfattn_layer = MultiHeadedAttention
         encoder_selfattn_layer_args = [
@@ -314,7 +279,6 @@ class Encoder(torch.nn.Module):
         self.after_norm = LayerNorm(attention_dim)
 
     def forward(self, xs, masks):
-
         xs = self.embed(xs)
 
         xs, masks = self.encoders(xs, masks)

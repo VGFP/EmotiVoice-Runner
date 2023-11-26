@@ -2,16 +2,13 @@
 This code is modified from https://github.com/espnet/espnet.
 """
 
-import torch 
+import torch
 
 from models.prompt_tts_modified.modules.encoder import LayerNorm
 
+
 class DurationPredictor(torch.nn.Module):
-
-    def __init__(
-        self, idim, n_layers=2, n_chans=384, kernel_size=3, dropout_rate=0.1, offset=1.0
-    ):
-
+    def __init__(self, idim, n_layers=2, n_chans=384, kernel_size=3, dropout_rate=0.1, offset=1.0):
         super(DurationPredictor, self).__init__()
         self.offset = offset
         self.conv = torch.nn.ModuleList()
@@ -34,7 +31,6 @@ class DurationPredictor(torch.nn.Module):
         self.linear = torch.nn.Linear(n_chans, 1)
 
     def _forward(self, xs, x_masks=None, is_inference=False):
-        
         if x_masks is not None:
             xs = xs.masked_fill(x_masks, 0.0)
 
@@ -46,9 +42,7 @@ class DurationPredictor(torch.nn.Module):
         xs = self.linear(xs.transpose(1, -1))  # (B, Tmax)
         if is_inference:
             # NOTE: calculate in linear domain
-            xs = torch.clamp(
-                torch.round(xs.exp() - self.offset), min=0
-            ).long()  # avoid negative value
+            xs = torch.clamp(torch.round(xs.exp() - self.offset), min=0).long()  # avoid negative value
 
         if x_masks is not None:
             xs = xs.masked_fill(x_masks, 0.0)
@@ -56,18 +50,13 @@ class DurationPredictor(torch.nn.Module):
         return xs.squeeze(-1)
 
     def forward(self, xs, x_masks=None):
-
         return self._forward(xs, x_masks, False)
 
     def inference(self, xs, x_masks=None):
-
         return self._forward(xs, x_masks, True)
 
 
-
 class VariancePredictor(torch.nn.Module):
-
-
     def __init__(
         self,
         idim: int,

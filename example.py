@@ -1,16 +1,19 @@
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.getcwd())
 
-from utils.utils import generate_phoneme_from_text, add_speaker_and_emotion, process_text, download_model_checkpoints, run_tts, load_models
+from utils.utils import (add_speaker_and_emotion, download_model_checkpoints,
+                         generate_phoneme_from_text, load_models, process_text,
+                         run_tts)
 
 """
 Proper workflow:
 download model checkpoints -> load_models -> process_text -> generate_phoneme_from_text -> add_speaker_and_emotion -> run_tts
 """
 
-def main():
 
+def run_example():
     text = """Sure, I can add type hints to the code for better clarity and to leverage Python's type checking capabilities. Type hints help in understanding what types of arguments a function expects and what type it returns, making the code more maintainable and less prone to errors.
     
     By dividing the function into smaller parts, you gain the flexibility of loading models and configurations only once and reusing them for each inference call. This approach is more efficient and easier to maintain, especially for repeated inference tasks."""
@@ -22,7 +25,7 @@ def main():
     load_models()
 
     # process text
-    processed_text = process_text(input_text = text)
+    processed_text = process_text(input_text=text)
 
     # generate phoneme from text
     phoneme = generate_phoneme_from_text(processed_text)
@@ -36,6 +39,5 @@ def main():
     print("Done!")
 
 
-if __name__ == '__main__':
-    main()
-
+if __name__ == "__main__":
+    run_example()
