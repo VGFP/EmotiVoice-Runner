@@ -10,6 +10,7 @@ from g2p_en import G2p
 sys.path.insert(0, os.getcwd())
 
 import argparse
+import gc
 import glob
 import os
 import sys
@@ -30,8 +31,6 @@ from config.joint.config import Config
 from models.hifigan.get_vocoder import MAX_WAV_VALUE
 from models.prompt_tts_modified.jets import JETSGenerator
 from models.prompt_tts_modified.simbert import StyleEncoder
-
-import gc
 
 
 def generate_unique_filename(extension=".wav"):
@@ -251,7 +250,7 @@ def get_style_embedding(prompt, tokenizer, style_encoder):
             attention_mask=attention_mask,
         )
     style_embedding = output["pooled_output"].cpu().squeeze().numpy()
-    
+
     del prompt, input_ids, token_type_ids, attention_mask, output
     gc.collect()
 

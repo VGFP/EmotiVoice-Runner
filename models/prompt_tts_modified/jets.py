@@ -18,8 +18,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from models.hifigan.get_random_segments import (get_random_segments,
-                                                get_segments)
+from models.hifigan.get_random_segments import get_random_segments, get_segments
 from models.hifigan.models import Generator as HiFiGANGenerator
 from models.prompt_tts_modified.model_open_source import PromptTTS
 

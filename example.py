@@ -3,9 +3,14 @@ import sys
 
 sys.path.insert(0, os.getcwd())
 
-from utils.utils import (add_speaker_and_emotion, download_model_checkpoints,
-                         generate_phoneme_from_text, load_models, process_text,
-                         run_tts)
+from utils.utils import (
+    add_speaker_and_emotion,
+    download_model_checkpoints,
+    generate_phoneme_from_text,
+    load_models,
+    process_text,
+    run_tts,
+)
 
 """
 Proper workflow:

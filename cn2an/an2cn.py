@@ -5,8 +5,7 @@ This code is modified from https://github.com/Ailln/cn2an.
 from typing import Union
 from warnings import warn
 
-from .conf import (NUMBER_LOW_AN2CN, NUMBER_UP_AN2CN, UNIT_LOW_ORDER_AN2CN,
-                   UNIT_UP_ORDER_AN2CN)
+from .conf import NUMBER_LOW_AN2CN, NUMBER_UP_AN2CN, UNIT_LOW_ORDER_AN2CN, UNIT_UP_ORDER_AN2CN
 
 # from proces import preprocess
 

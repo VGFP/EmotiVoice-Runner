@@ -5,14 +5,15 @@ This code is modified from https://github.com/espnet/espnet.
 import torch
 import torch.nn as nn
 
-from models.prompt_tts_modified.modules.alignment import (AlignmentModule,
-                                                          GaussianUpsampling,
-                                                          average_by_duration,
-                                                          viterbi_decode)
+from models.prompt_tts_modified.modules.alignment import (
+    AlignmentModule,
+    GaussianUpsampling,
+    average_by_duration,
+    viterbi_decode,
+)
 from models.prompt_tts_modified.modules.encoder import Encoder
 from models.prompt_tts_modified.modules.initialize import initialize
-from models.prompt_tts_modified.modules.variance import (DurationPredictor,
-                                                         VariancePredictor)
+from models.prompt_tts_modified.modules.variance import DurationPredictor, VariancePredictor
 
 
 class PromptTTS(nn.Module):

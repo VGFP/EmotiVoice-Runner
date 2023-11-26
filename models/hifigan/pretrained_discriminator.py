@@ -15,8 +15,7 @@
 import torch
 import torch.nn as nn
 
-from models.hifigan.models import (MultiPeriodDiscriminator,
-                                   MultiScaleDiscriminator)
+from models.hifigan.models import MultiPeriodDiscriminator, MultiScaleDiscriminator
 
 
 class Discriminator(nn.Module):

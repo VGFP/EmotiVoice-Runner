@@ -5,10 +5,15 @@ from typing import List
 
 from pydub import AudioSegment
 
-from .helpers import (convert_numbers_to_words,
-                      download_large_file_from_hugging_face, generate_audio,
-                      initialize_inference, preprocess_english,
-                      remove_empty_lines, save_audio)
+from .helpers import (
+    convert_numbers_to_words,
+    download_large_file_from_hugging_face,
+    generate_audio,
+    initialize_inference,
+    preprocess_english,
+    remove_empty_lines,
+    save_audio,
+)
 
 # global values for infrence
 device = None

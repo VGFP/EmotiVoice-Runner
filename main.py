@@ -1,13 +1,20 @@
 import os
 from typing import Optional
 
+import torch
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
-from utils.utils import (add_speaker_and_emotion, download_model_checkpoints,
-                         generate_phoneme_from_text, generate_unique_filename,
-                         load_models, process_text, run_tts)
+from utils.utils import (
+    add_speaker_and_emotion,
+    download_model_checkpoints,
+    generate_phoneme_from_text,
+    generate_unique_filename,
+    load_models,
+    process_text,
+    run_tts,
+)
 
 
 class TTSRequest(BaseModel):
@@ -47,7 +54,7 @@ async def generate_audio(request: TTSRequest):
         file_path = f"{output_path}/{output_filename}"
 
         torch.cuda.empty_cache()
-        
+
         return FileResponse(path=file_path, media_type="audio/wav", filename=output_filename)
 
     except Exception as e:

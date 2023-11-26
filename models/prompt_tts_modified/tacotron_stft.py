@@ -5,8 +5,7 @@ from https://github.com/NVIDIA/tacotron2
 import torch
 from librosa.filters import mel as librosa_mel_fn
 
-from models.prompt_tts_modified.audio_processing import (
-    dynamic_range_compression, dynamic_range_decompression)
+from models.prompt_tts_modified.audio_processing import dynamic_range_compression, dynamic_range_decompression
 from models.prompt_tts_modified.stft import STFT
 
 
