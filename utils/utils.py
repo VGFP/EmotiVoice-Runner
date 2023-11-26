@@ -61,41 +61,6 @@ def process_text(input_text: str) -> str:
     return convert_numbers_to_words(remove_empty_lines(input_text))
 
 
-'''
-def combine_wav_files(
-    folder_path: str = f"{os.getcwd()}/outputs/prompt_tts_open_source_joint/test_audio/audio/g_00140000",
-    output_file: str = f"{os.getcwd()}/combined_output1.wav",
-    delete_originals: bool = False
-) -> None:
-    """
-    Combine all WAV files in a folder into a single WAV file and optionally delete the original files.
-
-    :param folder_path: Path to the folder containing WAV files.
-    :param output_file: Path of the output combined WAV file.
-    :param delete_originals: If True, delete the original WAV files after combining them.
-    """
-
-    # Find all WAV files and sort them by their numerical value
-    wav_files = sorted(
-        glob.glob(os.path.join(folder_path, "*.wav")), key=lambda f: int(os.path.splitext(os.path.basename(f))[0])
-    )
-
-    # Combine WAV files
-    combined = AudioSegment.empty()
-    for wav_file in wav_files:
-        sound = AudioSegment.from_wav(wav_file)
-        combined += sound
-
-    # Export combined audio
-    combined.export(output_file, format="wav")
-
-    # Optionally delete the original WAV files
-    if delete_originals:
-        for wav_file in wav_files:
-            os.remove(wav_file)
-'''
-
-
 def add_speaker_and_emotion(text: List[str], speaker: str = "9017", emotion: str = "Happy") -> str:
     """
     Add speaker and emotion to the prompt.
@@ -158,4 +123,4 @@ def run_tts(
         load_models()
 
     audio = generate_audio(processed_text, device, style_encoder, generator, tokenizer, token2id, speaker2id)
-    save_audio(output_path, output_filename, audio, sample_rate=16_000)
+    save_audio(output_path, output_filename, audio, sample_rate=16000)
