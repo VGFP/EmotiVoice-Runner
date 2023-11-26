@@ -226,6 +226,8 @@ def generate_audio(
             audio_arr.append(audio)
         del sequence, sequence_len, style_embedding, content_embedding, speaker, infer_output
         gc.collect()
+        torch.cuda.empty_cache()
+        
     return np.concatenate(audio_arr)
 
 
@@ -253,5 +255,6 @@ def get_style_embedding(prompt, tokenizer, style_encoder):
 
     del prompt, input_ids, token_type_ids, attention_mask, output
     gc.collect()
+    torch.cuda.empty_cache()
 
     return style_embedding
