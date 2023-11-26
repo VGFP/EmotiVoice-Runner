@@ -45,6 +45,9 @@ async def generate_audio(request: TTSRequest):
 
         # Return the audio file
         file_path = f"{output_path}/{output_filename}"
+
+        torch.cuda.empty_cache()
+        
         return FileResponse(path=file_path, media_type="audio/wav", filename=output_filename)
 
     except Exception as e:

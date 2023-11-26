@@ -31,6 +31,8 @@ from models.hifigan.get_vocoder import MAX_WAV_VALUE
 from models.prompt_tts_modified.jets import JETSGenerator
 from models.prompt_tts_modified.simbert import StyleEncoder
 
+import gc
+
 
 def generate_unique_filename(extension=".wav"):
     unique_filename = str(uuid.uuid4()) + extension
@@ -223,7 +225,8 @@ def generate_audio(
             audio = infer_output["wav_predictions"].squeeze() * MAX_WAV_VALUE
             audio = audio.cpu().numpy().astype("int16")
             audio_arr.append(audio)
-
+        del sequence, sequence_len, style_embedding, content_embedding, speaker, infer_output
+        gc.collect()
     return np.concatenate(audio_arr)
 
 
@@ -248,4 +251,8 @@ def get_style_embedding(prompt, tokenizer, style_encoder):
             attention_mask=attention_mask,
         )
     style_embedding = output["pooled_output"].cpu().squeeze().numpy()
+    
+    del prompt, input_ids, token_type_ids, attention_mask, output
+    gc.collect()
+
     return style_embedding
