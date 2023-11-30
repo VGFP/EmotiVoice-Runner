@@ -32,8 +32,6 @@ from models.hifigan.get_vocoder import MAX_WAV_VALUE
 from models.prompt_tts_modified.jets import JETSGenerator
 from models.prompt_tts_modified.simbert import StyleEncoder
 
-lexicon = read_lexicon(f"{os.getcwd()}/utils/lexicon/librispeech-lexicon.txt")
-
 
 def generate_unique_filename(extension=".wav"):
     unique_filename = str(uuid.uuid4()) + extension
@@ -50,6 +48,9 @@ def read_lexicon(lex_path):
             if word.lower() not in lexicon:
                 lexicon[word.lower()] = phones
     return lexicon
+
+
+lexicon = read_lexicon(f"{os.getcwd()}/utils/lexicon/librispeech-lexicon.txt")
 
 
 def preprocess_english(text):
