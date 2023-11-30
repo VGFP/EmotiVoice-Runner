@@ -32,6 +32,8 @@ from models.hifigan.get_vocoder import MAX_WAV_VALUE
 from models.prompt_tts_modified.jets import JETSGenerator
 from models.prompt_tts_modified.simbert import StyleEncoder
 
+lexicon = read_lexicon(f"{os.getcwd()}/utils/lexicon/librispeech-lexicon.txt")
+
 
 def generate_unique_filename(extension=".wav"):
     unique_filename = str(uuid.uuid4()) + extension
@@ -51,7 +53,7 @@ def read_lexicon(lex_path):
 
 
 def preprocess_english(text):
-    lexicon = read_lexicon(f"{os.getcwd()}/utils/lexicon/librispeech-lexicon.txt")
+    global lexicon
 
     g2p = G2p()
     phones = []
@@ -227,7 +229,7 @@ def generate_audio(
         del sequence, sequence_len, style_embedding, content_embedding, speaker, infer_output
         gc.collect()
         torch.cuda.empty_cache()
-        
+
     return np.concatenate(audio_arr)
 
 
