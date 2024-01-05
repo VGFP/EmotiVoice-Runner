@@ -16,4 +16,6 @@ uvicorn main:app --reload
 
 Loading make take a while becaues script will download models from Hugging face if they are not already downloaded.
 
-# Based on EmotiVoice https://github.com/netease-youdao/EmotiVoice https://github.com/netease-youdao/EmotiVoice/blob/main/LICENSE
+# Based on EmotiVoice 
+https://github.com/netease-youdao/EmotiVoice
+https://github.com/netease-youdao/EmotiVoice/blob/main/LICENSE
